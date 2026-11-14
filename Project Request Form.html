@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Request Form</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #e2e8f0;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .sub { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #f1f5f9;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    .field.invalid input,
+    .field.invalid select,
+    .field.invalid textarea { border-color: #ef4444; }
+
+    .field.valid input,
+    .field.valid select,
+    .field.valid textarea { border-color: #22c55e; }
+
+    .error {
+      color: #f87171;
+      font-size: 12px;
+      margin-top: 5px;
+      min-height: 14px;
+    }
+
+    .counter {
+      text-align: right;
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: #052e16;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover { background: #16a34a; }
+    button:active { transform: scale(0.98); }
+    button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+
+    .success { display: none; text-align: center; }
+    .success .tick {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: #22c55e;
+      color: #052e16;
+      font-size: 30px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .summary {
+      text-align: left;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 14px;
+      margin: 18px 0;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .summary span { color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <!-- FORM VIEW -->
+    <form id="requestForm" novalidate>
+      <h1>Request a Project</h1>
+      <p class="sub">Tell me what you need and I'll get back to you.</p>
+
+      <div class="field">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="e.g. Jane Wanjiku" />
+        <div class="error"></div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" />
+        <div class="error"></div>
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone (Kenya)</label>
+        <input type="tel" id="phone" placeholder="0712345678 or +254712345678" />
+        <div class="error"></div>
+      </div>
+
+      <div class="field">
+        <label for="service">Service</label>
+        <select id="service">
+          <option value="">-- Choose a service --</option>
+          <option>Website</option>
+          <option>Web App / Dashboard</option>
+          <option>Automation / Bot</option>
+          <option>Video Editing</option>
+        </select>
+        <div class="error"></div>
+      </div>
+
+      <div class="field">
+        <label for="message">Project Details</label>
+        <textarea id="message" maxlength="300" placeholder="Describe what you want built..."></textarea>
+        <div class="counter"><span id="count">0</span>/300</div>
+        <div class="error"></div>
+      </div>
+
+      <button type="submit" id="submitBtn">Submit Request</button>
+    </form>
+
+    <!-- SUCCESS VIEW -->
+    <div class="success" id="successBox">
+      <div class="tick">✓</div>
+      <h1>Request Received!</h1>
+      <p class="sub">Here's what you sent:</p>
+      <div class="summary" id="summary"></div>
+      <button id="resetBtn">Send Another</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("requestForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const successBox = document.getElementById("successBox");
+    const summary = document.getElementById("summary");
+    const message = document.getElementById("message");
+    const count = document.getElementById("count");
+
+    // Validation rules: each returns an error message, or "" if valid
+    const rules = {
+      name: (v) => v.trim().length < 3 ? "Enter at least 3 characters" : "",
+      email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? "" : "Enter a valid email",
+      phone: (v) => /^(?:\+254|0)(7|1)\d{8}$/.test(v.replace(/\s/g, "")) ? "" : "Use format 07XXXXXXXX or +2547XXXXXXXX",
+      service: (v) => v ? "" : "Please choose a service",
+      message: (v) => v.trim().length < 15 ? "Give a bit more detail (15+ characters)" : ""
+    };
+
+    // Check one field and show its state
+    function validateField(id) {
+      const input = document.getElementById(id);
+      const field = input.parentElement;
+      const errorMsg = rules[id](input.value);
+
+      field.querySelector(".error").textContent = errorMsg;
+      field.classList.toggle("invalid", errorMsg !== "");
+      field.classList.toggle("valid", errorMsg === "");
+      return errorMsg === "";
+    }
+
+    // Live validation as the user types
+    Object.keys(rules).forEach((id) => {
+      document.getElementById(id).addEventListener("input", () => validateField(id));
+    });
+
+    // Character counter
+    message.addEventListener("input", () => {
+      count.textContent = message.value.length;
+    });
+
+    // Submit
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const allValid = Object.keys(rules).map(validateField).every(Boolean);
+      if (!allValid) return;
+
+      // Fake loading to simulate sending to a server
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending...";
+
+      setTimeout(() => {
+        const data = {
+          Name: document.getElementById("name").value,
+          Email: document.getElementById("email").value,
+          Phone: document.getElementById("phone").value,
+          Service: document.getElementById("service").value,
+          Details: message.value
+        };
+
+        summary.innerHTML = Object.entries(data)
+          .map(([key, val]) => `<span>${key}:</span> ${escapeHTML(val)}`)
+          .join("<br>");
+
+        form.style.display = "none";
+        successBox.style.display = "block";
+      }, 1200);
+    });
+
+    // Reset back to the form
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      form.reset();
+      count.textContent = "0";
+      document.querySelectorAll(".field").forEach((f) => {
+        f.classList.remove("valid", "invalid");
+        f.querySelector(".error").textContent = "";
+      });
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Request";
+      successBox.style.display = "none";
+      form.style.display = "block";
+    });
+
+    // Prevent HTML injection in the summary
+    function escapeHTML(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
